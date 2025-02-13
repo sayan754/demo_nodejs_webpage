@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+    
+    tools{
+        nodejs 'nodejs23'
+    }
+
+    stages {
+        stage('Git Checkout') {
+            steps {
+                git branch: 'main', changelog: false, poll: false, url: 'https://github.com/sayan754/demo_nodejs_webpage.git'
+            }
+        }
+        stage('Install Dependencies') {
+            steps {
+                sh "npm install" 
+            }
+        }
+        stage('Build and Push') {
+            steps {
+                 withDockerRegistry(credentialsId: 'a10bb57e-545a-443d-8dc9-f240894fd68c') {
+                     
+                     sh "docker build -t demonodejs ."
+                     sh "docker tag demonodejs sayan510/nodejs:latest"
+                     sh "docker push sayan510/nodejs:latest"
+                 }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                 withDockerRegistry(credentialsId: 'a10bb57e-545a-443d-8dc9-f240894fd68c') {
+                     
+                     sh "docker run -d --name demo-node-js -p 8081:8081 sayan510/nodejs:latest"
+                 }
+            }
+        }
+    }
+}
